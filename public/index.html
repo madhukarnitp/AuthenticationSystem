@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+
+</head>
+
+<body class="bg-gray-100 min-h-screen">
+
+    <!-- Navbar -->
+
+    <nav class="bg-green-600 text-white px-8 py-4 flex justify-between items-center shadow">
+
+        <h1 class="text-lg font-semibold">
+            SecureAuth Dashboard
+        </h1>
+
+        <div class="flex items-center gap-4">
+
+            <span id="navUser" class="font-medium"></span>
+
+            <button onclick="logout()" class="bg-red-500 px-3 py-1 rounded hover:bg-red-600">
+                Logout
+            </button>
+
+        </div>
+
+    </nav>
+
+
+    <!-- Dashboard -->
+
+    <div class="max-w-4xl mx-auto mt-12">
+
+        <div class="bg-white p-8 rounded-lg shadow">
+
+            <h2 class="text-2xl font-bold text-gray-800 mb-6">
+                Welcome <span id="navUser"></span>
+            </h2>
+
+            <div class="space-y-4 text-gray-700">
+                <p><b>FullName:</b> <span id="fullname"></span></p>
+                <p><b>Email:</b> <span id="userEmail"></span></p>
+                <p><b>Phone:</b> <span id="userPhone"></span></p>
+                <p><b>Account Created:</b> <span id="createdDate"></span></p>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <script>
+
+        const API_URL = "/api/auth";
+
+
+        async function getAuthenticatedUser() {
+
+            try {
+
+                let res = await fetch(`${API_URL}/access-token`, {
+                    method: "GET",
+                    credentials: "include"
+                });
+
+
+                if (res.ok) {
+
+                    const data = await res.json();
+                    return data.user;
+
+                }
+
+
+                if (res.status === 401) {
+
+                    const refresh = await fetch(`${API_URL}/refresh-token`, {
+                        method: "POST",
+                        credentials: "include"
+                    });
+
+
+                    if (refresh.ok) {
+
+                        const retry = await fetch(`${API_URL}/access-token`, {
+                            method: "GET",
+                            credentials: "include"
+                        });
+
+
+                        if (retry.ok) {
+
+                            const data = await retry.json();
+                            return data.user;
+
+                        }
+
+                    }
+
+                }
+                window.location.href = "login.html";
+            } catch (err) {
+                console.log(err);
+                window.location.href = "login.html";
+            }
+        }
+        async function loadDashboard() {
+            const user = await getAuthenticatedUser();
+            if (!user) return;
+            document.getElementById("fullname").innerText = user.fullname;
+            document.getElementById("navUser").innerText = user.fullname.split(" ")[0];
+            document.getElementById("userEmail").innerText = user.email;
+            document.getElementById("userPhone").innerText = user.phone || "Not provided";
+            document.getElementById("createdDate").innerText =new Date(user.createdAt).toLocaleDateString();
+        }
+        async function logout() {
+            const res = await fetch(`${API_URL}/logout`, {
+                method: "POST",
+            });
+            if (res.ok) {
+                localStorage.removeItem('userData');
+                window.location.href = 'login.html';
+            }
+        }
+        loadDashboard();
+    </script>
+
+</body>
+
+</html>
