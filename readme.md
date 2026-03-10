@@ -30,6 +30,26 @@ Implement secure Signup and Login APIs using:
 
 ---
 
+# 📧 Email Verification (Account Activation)
+
+After a user registers, the account remains **inactive** until the email address is verified.
+
+### How it works
+
+1. User registers using the **Signup API**
+2. The server generates a **verification token**
+3. A **verification link** is sent to the user's email using **Nodemailer**
+4. The user clicks the link to verify their account
+5. The account is marked as **active** in the database
+6. Only **verified users can log in**
+
+Example verification link:
+http://localhost:3000/api/auth/verify-account/:token
+
+If the email is not verified, the login API will return:
+*Account not verified. Please verify your email.*
+
+---
 # 🔐 Security Implementation
 
 ### Password Hashing
