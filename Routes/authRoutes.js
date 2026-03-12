@@ -215,10 +215,16 @@ router.get("/access-token", protect, async (req, res) => {
         message: "User not found",
       });
     }
+    const userData = {
+        _id: user._id,
+        email: user.email,
+        fullname: user.fullname,
+        phone: user.phone,
+      }
     return res.status(200).json({
       success: true,
       message: "Verified User!",
-      user: user,
+      user: userData,
     });
   } catch (err) {
     return res.status(401).json({ success: false });
