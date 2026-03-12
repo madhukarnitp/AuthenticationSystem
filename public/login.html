@@ -8,7 +8,7 @@
     <script>
         const API_URL = "./api/auth";
         const token = localStorage.getItem("userData");
-        if (token){
+        async function checkAuth(){
             let res = await fetch(`${API_URL}/access-token`, {
                 method: "GET",
                 credentials: "include"
@@ -20,6 +20,9 @@
                 localStorage.removeItem("userData");
                 return true;
             } 
+        }
+        if (token){
+            return checkAuth();
         }
         let loginEmail = "";
     </script>
