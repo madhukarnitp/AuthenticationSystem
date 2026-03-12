@@ -8,7 +8,19 @@
     <script>
         const API_URL = "./api/auth";
         const token = localStorage.getItem("userData");
-        if (token) window.location.href = "/";
+        if (token){
+            let res = await fetch(`${API_URL}/access-token`, {
+                method: "GET",
+                credentials: "include"
+            });
+            if (res.ok) {
+                window.location.href = "/";
+            }
+            else{
+                localStorage.removeItem("userData");
+                return true;
+            } 
+        }
         let loginEmail = "";
     </script>
 </head>
