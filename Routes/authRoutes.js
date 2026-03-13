@@ -10,11 +10,11 @@ const authController = require('..//controllers/authControllers');
 router.post("/signup", strictBody(["fullname", "email", "password", "phone"]), signupValidator, validate,authController.signup);
 router.post("/login", strictBody(["email", "password"]), loginValidator, validate, authController.login);
 router.get("/verify-email/:token", authController.verifyEmail);
-router.post("/resend-verification", authController.resendVerification);
+router.post("/resend-verification",strictBody(["email"]), authController.resendEmailVerification);
 router.get("/access-token", protect, authController.accessToken);
 router.post("/refresh-token", authController.RefreshToken);
-router.post("/forgot-password-otp", authController.forgetPassword);
-router.post("/reset-password-otp", strictBody(["email", "otp", "password"]), authController.resendPassOTP);
+router.post("/forgot-password-otp", strictBody(["email"]), authController.forgetPassword);
+router.post("/reset-password-otp", strictBody(["email", "otp", "password"]), authController.resetPassword);
 router.post("/logout", authController.logout);
 
 module.exports = router;
