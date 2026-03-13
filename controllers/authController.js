@@ -1,9 +1,12 @@
 const { body } = require("express-validator");
 const User = require("../models/user.models");
-const jwt = require('jsonwebtoken');
+const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const crypto = require("crypto");
-const { generateAccessToken, refreshAccessToken } = require("../utils/tokenGenerator");
+const {
+  generateAccessToken,
+  refreshAccessToken,
+} = require("../utils/tokenGenerator");
 const sendEmail = require("../utils/sendEmail");
 
 exports.signup = async (req, res) => {
@@ -106,192 +109,197 @@ exports.login = async (req, res) => {
   }
 };
 
-exports.verifyEmail = async (req,res) =>{
-    try {
-        const user = await User.findOne({
-          emailVerificationToken: req.params.token,
-          emailVerificationExpires: { $gt: Date.now() },
-        });
-    
-        if (!user)
-          return res.status(400).json({
-            success: false,
-            message: "Invalid or Expired Verification Token!",
-          });
-    
-        user.isVerified = true;
-        user.emailVerificationToken = undefined;
-        user.emailVerificationExpires = undefined;
-    
-        await user.save();
-    
-        res.redirect(`${process.env.CLIENT_URL}/./email-verified.html`);
-      } catch (error) {
-        res.status(500).json({ message: error.message });
-      }
-}
+exports.verifyEmail = async (req, res) => {
+  try {
+    const user = await User.findOne({
+      emailVerificationToken: req.params.token,
+      emailVerificationExpires: { $gt: Date.now() },
+    });
 
-exports.resendVerification= async (req,res)=>{
-    try {
-        const { email } = req.body;
-        const user = await User.findOne({ email });
-    
-        if (!user)
-          return res
-            .status(404)
-            .json({ success: false, message: "User Not Found!" });
-        if (user.isVerified)
-          return res.json({ message: "Email Already Verified!" });
-    
-        const verifyToken = crypto.randomBytes(32).toString("hex");
-        user.emailVerificationToken = verifyToken;
-        user.emailVerificationExpires = Date.now() + 60 * 60 * 1000;
-        await user.save();
-    
-        const verifyURL = `${process.env.CLIENT_URL}/verify-email/${verifyToken}`;
-        await sendEmail(
-          email,
-          "Verify Your MyAPP Account",
-          verifyURL,
-          "verificationLink",
-          user.fullname,
-        );
-        res.status(201).json({
-          success: true,
-          message: "Verification Email resent!",
-        });
-      } catch (error) {
-        res.status(500).json({ message: error.message });
-      }
-}
-
-exports.accessToken = async (req,res) =>{
-    try {
-        const token = req.cookies.accessToken;
-    
-        if (!token) {
-          return res
-            .status(401)
-            .json({ success: false, message: "No access token!" });
-        }
-    
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        const user = await User.findById(decoded.id).select("-password");
-        if (!user) {
-          return res.status(401).json({
-            success: false,
-            message: "User not found",
-          });
-        }
-        return res.status(200).json({
-          success: true,
-          message: "Verified User!",
-          user: user,
-        });
-      } catch (err) {
-        return res.status(401).json({ success: false });
-      }
-}
-
-exports.RefreshToken = async(req,res)=>{
-    try {
-        const token = req.cookies.refreshToken;
-        if (!token) {
-          return res
-            .status(401)
-            .json({ success: false, message: "No refresh token!" });
-        }
-    
-        const decoded = jwt.verify(token, process.env.JWT_REFRESH_SECRET);
-        const user = await User.findById(decoded.id);
-    
-        if (!user || user.refreshToken !== token) {
-          return res.status(403).json({
-            success: false,
-            message: "Invalid refresh token",
-          });
-        }
-        const accessToken = generateAccessToken(user._id);
-        res.cookie("accessToken", accessToken, {
-          httpOnly: true,
-          secure: true,
-          sameSite: "strict",
-          maxAge: 15 * 60 * 1000,
-        });
-        return res.status(200).json({
-          success: true,
-          message: "Token refreshed",
-        });
-      } catch (err) {
-        return res.status(403).json({
-          success: false,
-          message: "Refresh token expired",
-        });
-      }
-}
-
-exports.forgetPassword = async (req,res)=>{
-    try {
-        const { email } = req.body;
-    
-        const user = await User.findOne({ email });
-    
-        if (!user)
-          return res.status(404).json({
-            success: false,
-            message: "User Not Found!",
-          });
-    
-        const otp = crypto.randomInt(100000, 1000000);
-        user.resetOtp = otp;
-        user.resetOtpExpires = Date.now() + 10 * 60 * 1000;
-        await user.save();
-        await sendEmail(email, "Reset Your Password", otp, "OTP", user.fullname);
-        res.status(200).json({
-          success: true,
-          message: "Password reset OTP sent to email",
-        });
-      } catch (error) {
-        res.status(500).json({ message: error.message });
-      }
-}
-
-exports.resendPassOTP = async (req,res)=>{
-    try {
-      const { email, otp, password } = req.body;
-
-      const user = await User.findOne({
-        email,
-        resetOtp: otp,
-        resetOtpExpires: { $gt: Date.now() },
+    if (!user)
+      return res.status(400).json({
+        success: false,
+        message: "Invalid or Expired Verification Token!",
       });
 
-      if (!user) {
-        return res.status(400).json({
-          success: false,
-          message: "Invalid or expired OTP",
-        });
-      }
+    user.isVerified = true;
+    user.emailVerificationToken = undefined;
+    user.emailVerificationExpires = undefined;
 
-      const hashedPassword = await bcrypt.hash(password, 10);
+    await user.save();
 
-      user.password = hashedPassword;
-      user.resetOtp = undefined;
-      user.resetOtpExpires = undefined;
+    res.redirect(`${process.env.CLIENT_URL}/./email-verified.html`);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
 
-      await user.save();
+exports.resendEmailVerification = async (req, res) => {
+  try {
+    const { email } = req.body;
+    const user = await User.findOne({ email });
 
-      res.json({
-        success: true,
-        message: "Password reset successfully",
-      });
-    } catch (error) {
-      res.status(500).json({ message: error.message });
+    if (!user)
+      return res
+        .status(404)
+        .json({ success: false, message: "User Not Found!" });
+    if (user.isVerified)
+      return res.json({ message: "Email Already Verified!" });
+
+    const verifyToken = crypto.randomBytes(32).toString("hex");
+    user.emailVerificationToken = verifyToken;
+    user.emailVerificationExpires = Date.now() + 60 * 60 * 1000;
+    await user.save();
+
+    const verifyURL = `${process.env.CLIENT_URL}/verify-email/${verifyToken}`;
+    await sendEmail(
+      email,
+      "Verify Your MyAPP Account",
+      verifyURL,
+      "verificationLink",
+      user.fullname,
+    );
+    res.status(201).json({
+      success: true,
+      message: "Verification Email resent!",
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.accessToken = async (req, res) => {
+  try {
+    const token = req.cookies.accessToken;
+
+    if (!token) {
+      return res
+        .status(401)
+        .json({ success: false, message: "No access token!" });
     }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findById(decoded.id).select("-password");
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+    return res.status(200).json({
+      success: true,
+      message: "Verified User!",
+      user: user,
+    });
+  } catch (err) {
+    return res.status(401).json({ success: false });
+  }
+};
+
+exports.RefreshToken = async (req, res) => {
+  try {
+    const token = req.cookies.refreshToken;
+    if (!token) {
+      return res
+        .status(401)
+        .json({ success: false, message: "No refresh token!" });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_REFRESH_SECRET);
+    const user = await User.findById(decoded.id);
+
+    if (!user || user.refreshToken !== token) {
+      return res.status(403).json({
+        success: false,
+        message: "Invalid refresh token",
+      });
+    }
+    const accessToken = generateAccessToken(user._id);
+    res.cookie("accessToken", accessToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "strict",
+      maxAge: 15 * 60 * 1000,
+    });
+    return res.status(200).json({
+      success: true,
+      message: "Token refreshed",
+    });
+  } catch (err) {
+    return res.status(403).json({
+      success: false,
+      message: "Refresh token expired",
+    });
+  }
+};
+
+exports.forgetPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    const user = await User.findOne({ email });
+
+    if (!user)
+      return res.status(404).json({
+        success: false,
+        message: "User Not Found!",
+      });
+
+    const otp = crypto.randomInt(100000, 1000000);
+    user.resetOtp = otp;
+    user.resetOtpExpires = Date.now() + 10 * 60 * 1000;
+    await user.save();
+    await sendEmail(email, "Reset Your Password", otp, "OTP", user.fullname);
+    res.status(200).json({
+      success: true,
+      message: "Password reset OTP sent to email",
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.resetPassword = async (req, res) => {
+  try {
+    const { email, otp, password } = req.body;
+
+    const user = await User.findOne({
+      email,
+      resetOtp: otp,
+      resetOtpExpires: { $gt: Date.now() },
+    });
+
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid or expired OTP",
+      });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    user.password = hashedPassword;
+    user.resetOtp = undefined;
+    user.resetOtpExpires = undefined;
+
+    await user.save();
+
+    res.json({
+      success: true,
+      message: "Password reset successfully",
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.getUserData = async (req, res)=>{
+    console.log('Accessed Protected Routes!');
+    res.status(200).json({success: true, message: 'Accessing Protected Route with proper Authentication'});
 }
 
-exports.logout = async (req,res)=>{
-    try {
+exports.logout = async (req, res) => {
+  try {
     const decoded = jwt.verify(
       req.cookies.refreshToken,
       process.env.JWT_REFRESH_SECRET,
@@ -311,4 +319,4 @@ exports.logout = async (req,res)=>{
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
-}
+};
