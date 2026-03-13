@@ -4,7 +4,7 @@ const { signupValidator, loginValidator, } = require("../validators/authValidato
 const strictBody = require("../middleware/strictBody");
 const validate = require("../middleware/validate");
 const protect = require("../middleware/protect");
-const authController = require('../controllers/authControllers');
+const authController = require('../controllers/authController');
 
 //app routes 
 router.get('/getData', protect, authController.getUserData);
