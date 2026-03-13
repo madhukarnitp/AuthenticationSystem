@@ -44,7 +44,7 @@ After a user registers, the account remains **inactive** until the email address
 6. Only **verified users can log in**
 
 Example verification link:
-http://localhost:3000/api/auth/verify-account/:token
+http://localhost:3000/api/auth/verify-email/:token
 
 If the email is not verified, the login API will return:
 *Account not verified. Please verify your email.*
