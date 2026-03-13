@@ -7,6 +7,7 @@ const protect = require("../middleware/protect");
 const authController = require('..//controllers/authControllers');
 
 //app routes 
+router.get('/getData', protect, authController.getUserData);
 router.post("/signup", strictBody(["fullname", "email", "password", "phone"]), signupValidator, validate,authController.signup);
 router.post("/login", strictBody(["email", "password"]), loginValidator, validate, authController.login);
 router.get("/verify-email/:token", authController.verifyEmail);
